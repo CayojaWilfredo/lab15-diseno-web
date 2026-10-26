@@ -29,7 +29,116 @@ jobs:
       - name: Preparar sitio y URL
         env:
           PUBLIC_URL: ${{ steps.pages.outputs.base_url }}
-        run: python3 scripts/preparar_publicacion.py
+        run: |
+          python3 - <<'PY'
+          """Prepara archivos estáticos para Pages. GitHub lo ejecuta automáticamente."""
+          from pathlib import Path
+          from urllib.parse import urlsplit, urljoin, quote, unquote
+          from html import escape, unescape
+          from html.parser import HTMLParser
+          import os, re, shutil
+          import xml.etree.ElementTree as ET
+          
+          ROOT = Path.cwd()
+          OUT = ROOT / '_site'
+          PUBLIC_URL = os.environ.get('PUBLIC_URL', '').strip().rstrip('/') + '/'
+          parsed = urlsplit(PUBLIC_URL)
+          if parsed.scheme != 'https' or not parsed.netloc or parsed.query or parsed.fragment:
+              raise SystemExit('GitHub no proporcionó una URL HTTPS válida. Revisá Settings > Pages > GitHub Actions.')
+          if not (ROOT / 'index.html').is_file():
+              raise SystemExit('Falta index.html en la raíz: subí el contenido de SITIO_PARA_SUBIR, no la carpeta exterior.')
+          
+          SKIP_PARTS = {'.git', '.github', '.vscode', '_site', 'node_modules', '__pycache__', 'originales'}
+          SKIP_NAMES = {'package.json', 'package-lock.json', 'publicacion.json', 'LEEME_REEMPLAZO.txt', 'VERSION.txt'}
+          STATIC = {'.html', '.css', '.js', '.mjs', '.json', '.xml', '.txt', '.svg', '.png', '.jpg', '.jpeg',
+                    '.webp', '.avif', '.gif', '.ico', '.mp4', '.webm', '.mp3', '.ogg', '.wav', '.vtt',
+                    '.woff', '.woff2', '.ttf', '.otf', '.webmanifest'}
+          if OUT.exists():
+              shutil.rmtree(OUT)
+          for path in ROOT.rglob('*'):
+              rel = path.relative_to(ROOT)
+              if any(part in SKIP_PARTS for part in rel.parts) or not path.is_file() or path.is_symlink():
+                  continue
+              if path.name in SKIP_NAMES:
+                  continue
+              if path.suffix.lower() not in STATIC and path.name not in {'.nojekyll', 'LICENSE'}:
+                  continue
+              dest = OUT / rel
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(path, dest)
+          
+          # Respetar las URLs externas; reemplazar solo las bases de ejemplo de esta plantilla.
+          for path in OUT.rglob('*'):
+              if not path.is_file() or path.suffix.lower() not in {'.html', '.xml', '.txt', '.json'}:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              for old in ('https://senderossamaipata.example/', 'https://senderossamaipata.bo/'):
+                  text = text.replace(old, PUBLIC_URL)
+              path.write_text(text, encoding='utf-8')
+          
+          def set_href(tag, value):
+              attr = re.compile(r'\bhref\s*=\s*([\'"])(.*?)\1', re.I | re.S)
+              return attr.sub(lambda m: 'href="' + escape(value, quote=True) + '"', tag, count=1)
+          
+          def set_content(tag, value):
+              attr = re.compile(r'\bcontent\s*=\s*([\'"])(.*?)\1', re.I | re.S)
+              return attr.sub(lambda m: 'content="' + escape(value, quote=True) + '"', tag, count=1)
+          
+          urls = []
+          for path in sorted(OUT.rglob('*.html')):
+              rel = path.relative_to(OUT).as_posix()
+              page_url = PUBLIC_URL if rel == 'index.html' else PUBLIC_URL + quote(rel, safe='/')
+              text = path.read_text(encoding='utf-8')
+              noindex = bool(re.search(r'<meta\b[^>]*\bname\s*=\s*[\'"]robots[\'"][^>]*\bcontent\s*=\s*[\'"][^\'"]*noindex', text, re.I))
+              if rel == '404.html':
+                  # Una base de proyecto hace que los recursos funcionen también en rutas profundas.
+                  text = re.sub(r'<base\b[^>]*>\s*', '', text, flags=re.I)
+                  text = re.sub(r'(<head\b[^>]*>)', lambda m: m.group(1) + '\n  <base href="' + escape(parsed.path, quote=True) + '">', text, count=1, flags=re.I)
+              else:
+                  canonical = re.compile(r'<link\b(?=[^>]*\brel\s*=\s*[\'"]canonical[\'"])[^>]*>', re.I)
+                  if canonical.search(text):
+                      text = canonical.sub(lambda m: set_href(m.group(0), page_url), text)
+                  else:
+                      text = text.replace('</head>', '  <link rel="canonical" href="' + escape(page_url, quote=True) + '">\n</head>', 1)
+                  og = re.compile(r'<meta\b(?=[^>]*\bproperty\s*=\s*[\'"]og:url[\'"])[^>]*>', re.I)
+                  text = og.sub(lambda m: set_content(m.group(0), page_url), text)
+              path.write_text(text, encoding='utf-8')
+              if rel not in {'404.html', 'gracias.html'} and not rel.startswith('version-bootstrap/') and not noindex:
+                  urls.append(page_url)
+          
+          ET.register_namespace('', 'http://www.sitemaps.org/schemas/sitemap/0.9')
+          ns = '{http://www.sitemaps.org/schemas/sitemap/0.9}'
+          root = ET.Element(ns + 'urlset')
+          for value in urls:
+              ET.SubElement(ET.SubElement(root, ns + 'url'), ns + 'loc').text = value
+          ET.ElementTree(root).write(OUT / 'sitemap.xml', encoding='utf-8', xml_declaration=True)
+          (OUT / 'robots.txt').write_text('User-agent: *\nAllow: /\nSitemap: ' + PUBLIC_URL + 'sitemap.xml\n', encoding='utf-8')
+          (OUT / '.nojekyll').touch()
+          
+          # Revisar medios locales sin inventar imágenes ni bloquear una revisión del HTML.
+          class Assets(HTMLParser):
+              def __init__(self, page):
+                  super().__init__(); self.page = page; self.missing = set()
+              def handle_starttag(self, tag, attrs):
+                  a = dict(attrs); values = []
+                  if tag in {'img', 'script', 'source', 'track'} and a.get('src'): values.append(a['src'])
+                  if tag == 'video' and a.get('poster'): values.append(a['poster'])
+                  if a.get('srcset'): values.extend(x.strip().split()[0] for x in a['srcset'].split(',') if x.strip())
+                  for v in values:
+                      u = urlsplit(unescape(v))
+                      if u.scheme or u.netloc or not u.path: continue
+                      target = self.page.parent / unquote(u.path)
+                      if not target.is_file(): self.missing.add(v)
+          missing = set()
+          for page in OUT.rglob('*.html'):
+              check = Assets(page); check.feed(page.read_text(encoding='utf-8'))
+              missing.update(f'{page.relative_to(OUT)} -> {x}' for x in check.missing)
+          if missing:
+              print('::warning::Hay recursos locales ausentes. Copiá las carpetas img y video de tu sitio y volvé a subirlas.')
+              for item in sorted(missing): print('Falta:', item)
+          print('Sitio preparado:', PUBLIC_URL)
+          print('Archivos estáticos:', sum(1 for p in OUT.rglob('*') if p.is_file()))
+          PY
       - name: Subir sitio preparado
         uses: actions/upload-pages-artifact@v4
         with:
