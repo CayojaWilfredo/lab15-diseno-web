@@ -1,0 +1,37 @@
+CONTENIDO DE LA PÁGINA "NOSOTROS" — entregado por la familia Méndez (Senderos Samaipata)
+ 
+TÍTULO: Nosotros
+ENTRADA: Somos la familia Méndez: nacimos en Samaipata y crecimos caminando sus cerros. Desde 2014 compartimos con
+viajeros de todo el mundo los senderos que conocemos desde niños, con una regla simple: que el turismo deje algo bueno
+en la comunidad y en el bosque.
+ 
+NUESTRA HISTORIA (en orden cronológico)
+2014 — Rosa Méndez guía su primer grupo al Fuerte con cinco mochileros argentinos.
+2017 — Nuestros guías obtienen la certificación del Servicio Departamental de Turismo.
+2020 — Durante la pandemia, sin turistas, plantamos nuestros primeros 300 árboles en el Amboró.
+2023 — Abrimos la Ruta del Che junto a familias de Vallegrande y La Higuera.
+2026 — Estrenamos este sitio web, hecho por estudiantes de Ingeniería de Sistemas de la UPDS.
+ 
+EL EQUIPO (iniciales para el avatar · nombre · descripción)
+RM · Rosa Méndez · Fundadora y guía del Fuerte. Habla español y quechua.
+JM · Juan Carlos Méndez · Guía certificado del Amboró y experto en aves.
+LM · Lucía Méndez · Reservas y atención en inglés y portugués.
+AV · Aurelio Vaca · Guía de los helechos gigantes desde hace 25 años.
+ 
+NUESTRO IMPACTO (número · texto)
++4.000 · viajeros acompañados            (valor para la máquina: 4000)
+1.200 · árboles plantados en el Amboró   (valor: 1200)
+8 · personas como máximo por grupo       (valor: 8)
+ 
+PREGUNTAS FRECUENTES
+¿Necesito experiencia para hacer los tours?
+  No. Los tours de dificultad baja son para toda la familia. Para los de dificultad media-alta (Mirador de cóndores)
+  recomendamos caminar habitualmente.
+¿Qué debo llevar?
+  Zapatos cómodos, gorra, protector solar, repelente, una chamarra ligera y agua. El resto lo ponemos nosotros.
+¿Cómo pago el adelanto?
+  Por transferencia o pago con QR desde cualquier banco boliviano. Te enviamos el código por WhatsApp.
+¿Hay tours en inglés o portugués?
+  Sí. Elige el idioma del guía en el formulario de reserva y Lucía coordinará tu tour.
+ 
+BOTÓN FINAL: Reserva tu tour (lleva a contacto.html#reserva)

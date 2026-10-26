@@ -1,0 +1,8 @@
+LABORATORIO 14 — LEER PRIMERO
+
+Esta carpeta es una versión acumulativa completa del código. No necesitas mezclar los cuatro laboratorios.
+OPCIÓN RECOMENDADA: abre esta carpeta en VS Code y copia dentro las carpetas img y video de tu Lab 11/7, junto a index.html. Conserva todas las imágenes y subtítulos originales optimizados.
+OPCIÓN REEMPLAZO: haz copia de tu sitio anterior; copia TODO el contenido de esta carpeta sobre esa copia y acepta reemplazar archivos. No borres img ni video; este paquete no las contiene.
+Abre index.html con Live Server. La alternativa sigue en version-bootstrap/index.html con Bootstrap local. No abras todas las versiones bajo la misma raíz para publicar.
+
+Añadido: archivos Git, README, configurar-url.py y PUBLICAR_PASO_A_PASO.md. La publicación y commits se realizan en tu cuenta.
